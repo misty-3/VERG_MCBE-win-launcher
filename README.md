@@ -17,10 +17,10 @@ A powerful, modern desktop application designed to easily download, manage, and 
 - **Modern UI**: Clean and responsive WPF-based UI featuring filtering, auto-scrolling, and beautiful aesthetics.
 
 ## 📸 Screenshots
-| Main Interface | Versions |
+| Main Menu | Versions |
 |:---:|:---:|
-| ![Screenshot 1](pics/image.png) | ![Screenshot 2](pics/image2.png) |
-| ![Screenshot 3](pics/image3.png) | ![Screenshot 4](pics/image4.png) |
+| ![Main Menu 1](pics/image.png) | ![Versions 1](pics/image3.png) |
+| ![Main Menu 2](pics/image2.png) | ![Versions 2](pics/image4.png) |
 
 *(Note: Actual appearance may vary based on usage)*
 
@@ -51,8 +51,8 @@ A powerful, modern desktop application designed to easily download, manage, and 
 ## 📸 لقطات الشاشة
 | الواجهة الرئيسية | الإصدارات |
 |:---:|:---:|
-| ![لقطة شاشة 1](pics/image.png) | ![لقطة شاشة 2](pics/image2.png) |
-| ![لقطة شاشة 3](pics/image3.png) | ![لقطة شاشة 4](pics/image4.png) |
+| ![الواجهة الرئيسية 1](pics/image.png) | ![الإصدارات 1](pics/image3.png) |
+| ![الواجهة الرئيسية 2](pics/image2.png) | ![الإصدارات 2](pics/image4.png) |
 
 *(ملاحظة: قد يختلف المظهر الفعلي بناءً على الاستخدام)*
 
