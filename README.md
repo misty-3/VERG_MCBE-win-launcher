@@ -1,5 +1,7 @@
 # Minecraft Bedrock Launcher (MCBE-win-launcher)
 
+[![Download](https://img.shields.io/badge/Download-VERG_launcher-blue?style=for-the-badge)](https://github.com/misty-3/VERG_MCBE-win-launcher/releases/download/verg/Verg_launcher.exe)
+
 [English](#english) | [العربية](#العربية)
 
 ---
