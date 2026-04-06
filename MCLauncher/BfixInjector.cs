@@ -54,7 +54,7 @@ namespace MCLauncher
             if (string.IsNullOrEmpty(minecraftDirectory) || !Directory.Exists(minecraftDirectory))
                 return;
             
-            // Check if all files already exist
+            // Check if all files already exist yes
             if (AllFilesExist(minecraftDirectory))
             {
                 System.Diagnostics.Debug.WriteLine($"Bfix files already exist in {minecraftDirectory}, skipping injection");
