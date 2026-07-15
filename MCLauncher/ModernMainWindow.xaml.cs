@@ -17,6 +17,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Xml.Linq;
@@ -52,6 +53,9 @@ namespace MCLauncher
         private ObservableCollection<ModernVersionViewModel> _installedVersions;
         private ObservableCollection<ModernVersionViewModel> _availableVersions;
         private List<ModernVersionViewModel> _allVersions;
+        private List<ModernVersionViewModel> _pagedFull;
+        private int _pageStart;
+        private const int PageSize = 30;
 
         // Download pause/resume tracking
         private Dictionary<WPFDataTypes.Version, CancellationTokenSource> _downloadCancelTokens = new Dictionary<WPFDataTypes.Version, CancellationTokenSource>();
@@ -120,6 +124,8 @@ namespace MCLauncher
             _installedVersions = new ObservableCollection<ModernVersionViewModel>();
             _availableVersions = new ObservableCollection<ModernVersionViewModel>();
             _allVersions = new List<ModernVersionViewModel>();
+            _pagedFull = new List<ModernVersionViewModel>();
+            _pageStart = 0;
 
             InstalledVersionsList.ItemsSource = _installedVersions;
             AvailableVersionsList.ItemsSource = _availableVersions;
@@ -273,17 +279,67 @@ namespace MCLauncher
             // Show empty state
             EmptyState.Visibility = _installedVersions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-            // Initial display - show all
-            _availableVersions.Clear();
-            foreach (var v in _allVersions)
-            {
-                _availableVersions.Add(v);
-            }
+            _pagedFull = new List<ModernVersionViewModel>(_allVersions);
+            _pageStart = 0;
+            RenderPage();
 
             Debug.WriteLine($"Final counts - Installed: {_installedVersions.Count}, Available: {_availableVersions.Count}");
             
             // CRITICAL: Force command re-evaluation after list refresh
             System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void RenderPage()
+        {
+            if (_pagedFull == null)
+                _pagedFull = new List<ModernVersionViewModel>();
+            _availableVersions.Clear();
+            int end = Math.Min(_pageStart + PageSize, _pagedFull.Count);
+            for (int i = _pageStart; i < end; i++)
+                _availableVersions.Add(_pagedFull[i]);
+            UpdatePager();
+            System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void UpdatePager()
+        {
+            if (BrowsePager == null)
+                return;
+            int total = _pagedFull == null ? 0 : _pagedFull.Count;
+            int totalPages = Math.Max(1, (int)Math.Ceiling((double)total / PageSize));
+            int currentPage = total == 0 ? 0 : (_pageStart / PageSize) + 1;
+            BrowsePageText.Text = $"{currentPage} / {totalPages}";
+            BrowsePrevButton.IsEnabled = _pageStart > 0;
+            BrowseNextButton.IsEnabled = _pageStart + PageSize < total;
+            BrowsePager.Visibility = total > PageSize ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void BrowsePrevButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_pageStart <= 0)
+                return;
+            _pageStart = Math.Max(0, _pageStart - PageSize);
+            RenderPage();
+            ScrollToTopOfBrowse();
+        }
+
+        private void BrowseNextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_pagedFull == null || _pageStart + PageSize >= _pagedFull.Count)
+                return;
+            _pageStart = Math.Min(_pageStart + PageSize, Math.Max(0, _pagedFull.Count - PageSize));
+            RenderPage();
+            ScrollToTopOfBrowse();
+        }
+
+        private void ScrollToTopOfBrowse()
+        {
+            var sv = FindVisualChild<ScrollViewer>(AvailableVersionsList);
+            if (sv != null)
+            {
+                sv.BeginAnimation(SmoothScrollOffsetProperty, null);
+                sv.ScrollToVerticalOffset(0);
+            }
         }
 
         private void VersionEntryPropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -776,7 +832,12 @@ namespace MCLauncher
             
             // Update Browse section
             if (RefreshButton != null)
-                RefreshButton.Content = Localization.Get("Refresh");
+            {
+                var refreshLabel = Localization.Get("Refresh");
+                if (refreshLabel.StartsWith("🔄 "))
+                    refreshLabel = refreshLabel.Substring("🔄 ".Length);
+                RefreshButton.Content = refreshLabel;
+            }
             
             // Update filter buttons
             FilterAll.Content = Localization.Get("All");
@@ -828,7 +889,7 @@ namespace MCLauncher
                 vm.OnPropertyChanged("CancelButtonText");
             }
             
-            foreach (var vm in _availableVersions)
+            foreach (var vm in _allVersions)
             {
                 vm.OnPropertyChanged("FriendlyStatus");
                 vm.OnPropertyChanged("PackageTypeDisplay");
@@ -1030,15 +1091,44 @@ namespace MCLauncher
         }
 
         // Native Windows mouse scrolling support
+        private static readonly DependencyProperty SmoothScrollOffsetProperty =
+            DependencyProperty.RegisterAttached("SmoothScrollOffset", typeof(double), typeof(ModernMainWindow), new PropertyMetadata(0.0, SmoothScrollOffsetChanged));
+
+        private static void SmoothScrollOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ScrollViewer sv)
+                sv.ScrollToVerticalOffset((double)e.NewValue);
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t)
+                    return t;
+                var result = FindVisualChild<T>(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
         private void ScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             ScrollViewer scrollViewer = sender as ScrollViewer;
-            if (scrollViewer != null)
-            {
-                double scrollAmount = e.Delta * 0.5; // Adjust multiplier for scroll speed
-                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - scrollAmount);
-                e.Handled = true;
-            }
+            if (scrollViewer == null && sender is DependencyObject d)
+                scrollViewer = FindVisualChild<ScrollViewer>(d);
+            if (scrollViewer == null)
+                return;
+
+            double target = scrollViewer.VerticalOffset - e.Delta * 0.5;
+            target = Math.Max(0, Math.Min(scrollViewer.ScrollableHeight, target));
+
+            var anim = new DoubleAnimation(scrollViewer.VerticalOffset, target, TimeSpan.FromMilliseconds(250));
+            anim.EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut };
+            scrollViewer.BeginAnimation(SmoothScrollOffsetProperty, anim);
+            e.Handled = true;
         }
 
         // Auto-scroll support - Middle mouse button
@@ -1258,9 +1348,10 @@ namespace MCLauncher
                 return true;
             }).ToList());
 
-            // Replace entire collection to avoid individual change notifications
-            _availableVersions = new ObservableCollection<ModernVersionViewModel>(filtered);
-            AvailableVersionsList.ItemsSource = _availableVersions;
+            // Feed the filtered set into the paging window (keep the bound instance stable)
+            _pagedFull = filtered;
+            _pageStart = 0;
+            RenderPage();
         }
 
         private async void RefreshVersions_Click(object sender, RoutedEventArgs e)
@@ -2375,8 +2466,17 @@ namespace MCLauncher
             (v) => InvokeUnlock((WPFDataTypes.Version)v),
             (v) => {
                 var version = v as WPFDataTypes.Version;
-                // CRITICAL: Disable unlock during state changes OR critical package operations
-                return version != null && version.IsInstalled && !version.IsStateChanging && !IsAnyVersionInCriticalState();
+                // CRITICAL: OnlineFix DLLs only work on GDK versions, so hide/disable for UWP/UMP
+                return version != null && version.PackageType == PackageType.GDK && version.IsInstalled && !version.IsStateChanging && !IsAnyVersionInCriticalState();
+            }
+        );
+
+        public ICommand FreeTrialUnlockCommand => new RelayCommand(
+            (v) => InvokeFreeTrialUnlock((WPFDataTypes.Version)v),
+            (v) => {
+                var version = v as WPFDataTypes.Version;
+                // CRITICAL: Free trial unlock is for non-GDK (UWP/UMP) versions only
+                return version != null && version.PackageType == PackageType.UWP && version.IsInstalled && !version.IsStateChanging && !IsAnyVersionInCriticalState();
             }
         );
 
@@ -2419,6 +2519,60 @@ namespace MCLauncher
                         Localization.Get("Error"),
                         $"Failed to unlock version:\n\n{ex.Message}");
                 }
+            }
+        }
+
+        private void InvokeFreeTrialUnlock(WPFDataTypes.Version v)
+        {
+            if (v == null)
+                return;
+
+            if (TrialUnlockHelper.IsTrialUnlocked())
+            {
+                ShowFriendlyInfo(
+                    Localization.Get("TrialAlreadyUnlocked"),
+                    Localization.Format("TrialAlreadyUnlockedMessage", v.DisplayName));
+                return;
+            }
+
+            var result = MessageBox.Show(
+                Localization.Get("TrialUnlockConfirmMessage"),
+                Localization.Get("TrialUnlockConfirmTitle"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            try
+            {
+                if (!TrialUnlockHelper.IsAdministrator())
+                {
+                    TrialUnlockHelper.RunElevatedAndWait();
+                }
+                else
+                {
+                    TrialUnlockHelper.ApplyTrialUnlock();
+                }
+
+                if (TrialUnlockHelper.IsTrialUnlocked())
+                {
+                    ShowFriendlySuccess(
+                        Localization.Get("TrialUnlockSuccess"),
+                        Localization.Format("TrialUnlockSuccessMessage", v.DisplayName));
+                }
+                else
+                {
+                    ShowFriendlyError(
+                        Localization.Get("Error"),
+                        Localization.Get("TrialUnlockFailedMessage"));
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowFriendlyError(
+                    Localization.Get("Error"),
+                    $"Failed to unlock free trial:\n\n{ex.Message}");
             }
         }
 
@@ -4356,7 +4510,9 @@ namespace MCLauncher
                     OnPropertyChanged("CancelButtonVisibility");
                     OnPropertyChanged("PauseResumeButtonVisibility");
                     OnPropertyChanged("PauseResumeButtonText");
-                    
+                    OnPropertyChanged("UnlockButtonVisibility");
+                    OnPropertyChanged("FreeTrialUnlockButtonVisibility");
+
                     // Re-subscribe to new StateChangeInfo if it changed
                     if (e.PropertyName == "StateChangeInfo" && Version.StateChangeInfo != null)
                     {
@@ -4513,16 +4669,21 @@ namespace MCLauncher
         public Visibility PauseResumeButtonVisibility => Version.IsStateChanging && Version.StateChangeInfo?.VersionState == VersionState.Downloading ? Visibility.Visible : Visibility.Collapsed;
         public Visibility InstalledVisibility => Version.IsInstalled && !Version.IsStateChanging ? Visibility.Visible : Visibility.Collapsed;
 
+        public Visibility UnlockButtonVisibility => Version.PackageType == PackageType.GDK && Version.IsInstalled && !Version.IsStateChanging ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility FreeTrialUnlockButtonVisibility => Version.PackageType == PackageType.UWP && Version.IsInstalled && !Version.IsStateChanging ? Visibility.Visible : Visibility.Collapsed;
+
         public ICommand LaunchCommand => _commands.LaunchCommand;
         public ICommand RemoveCommand => _commands.RemoveCommand;
         public ICommand DownloadCommand => _commands.DownloadCommand;
         public ICommand UnlockCommand => _commands.UnlockCommand;
+        public ICommand FreeTrialUnlockCommand => _commands.FreeTrialUnlockCommand;
 
         // Localized button text
         public string PlayButtonText => Localization.Get("Play");
         public string DownloadButtonText => Localization.Get("Download");
         public string RemoveTooltipText => Localization.Get("RemoveTooltip");
         public string UnlockTooltipText => Localization.Get("UnlockTooltip");
+        public string FreeTrialUnlockTooltipText => Localization.Get("TrialUnlockTooltip");
         public string PauseResumeButtonText
         {
             get

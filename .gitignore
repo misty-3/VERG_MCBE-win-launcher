@@ -2,3 +2,6 @@
 x64
 packages
 Debug
+/graphify-out
+MCLauncher/graphify-out
+Release/Minecraft Bedrock Launcher.exe

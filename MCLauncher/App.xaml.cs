@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -12,7 +13,14 @@ namespace MCLauncher {
 
         protected override void OnStartup(StartupEventArgs e) {
             base.OnStartup(e);
-            
+
+            if (e.Args != null && e.Args.Contains("--trial-unlock"))
+            {
+                TrialUnlockHelper.ApplyTrialUnlock();
+                Shutdown();
+                return;
+            }
+
             // Setup error handling
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {

@@ -297,6 +297,14 @@ namespace MCLauncher
                 ["UnlockSuccessMessage"] = "{0} has been unlocked successfully!\n\nThe unlock files have been added to the game directory.",
                 ["AlreadyUnlocked"] = "Already Unlocked",
                 ["AlreadyUnlockedMessage"] = "{0} already has the unlock files installed.",
+                ["TrialUnlockTooltip"] = "Unlock the free trial (non-GDK versions)",
+                ["TrialUnlockConfirmTitle"] = "Unlock Free Trial?",
+                ["TrialUnlockConfirmMessage"] = "This replaces a Windows system file (Windows.ApplicationModel.Store.dll) with a patched version so non-GDK Minecraft versions can run the free trial.\n\n⚠️ A backup is saved to C:\\Program Files\\MCBypass\\backup. Your antivirus may flag this. Continue?",
+                ["TrialUnlockSuccess"] = "Free Trial Unlocked!",
+                ["TrialUnlockSuccessMessage"] = "The free trial has been unlocked for {0} and all non-GDK versions.\n\nRestart Minecraft to play.",
+                ["TrialAlreadyUnlocked"] = "Already Unlocked",
+                ["TrialAlreadyUnlockedMessage"] = "The free trial is already unlocked on this PC.",
+                ["TrialUnlockFailedMessage"] = "The free trial could not be unlocked. Try running the launcher as administrator.",
             },
             
             // Arabic (Iraqi dialect) translations
@@ -588,6 +596,14 @@ namespace MCLauncher
                 ["UnlockSuccessMessage"] = "{0} انفك قفله بنجاح!\n\nملفات فك القفل انضافت لمجلد اللعبة.",
                 ["AlreadyUnlocked"] = "القفل مفكوك أصلاً",
                 ["AlreadyUnlockedMessage"] = "{0} عنده ملفات فك القفل مثبتة أصلاً.",
+                ["TrialUnlockTooltip"] = "افك قفل النسخة التجريبية (نسخ غير GDK)",
+                ["TrialUnlockConfirmTitle"] = "تفك قفل النسخة التجريبية؟",
+                ["TrialUnlockConfirmMessage"] = "هذا يستبدل ملف نظام ويندوز (Windows.ApplicationModel.Store.dll) بنسخة معدلة عشان نسخ ماين كرافت غير GDK تقدر تشغل النسخة التجريبية.\n\n⚠️ ينحفظ نسخة احتياطية بـ C:\\Program Files\\MCBypass\\backup. مضاد الفيروسات ممكن يكشفه. تكمل؟",
+                ["TrialUnlockSuccess"] = "انفك قفل النسخة التجريبية!",
+                ["TrialUnlockSuccessMessage"] = "انفك قفل النسخة التجريبية لـ {0} وكل النسخ غير GDK.\n\nشغل ماين كرافت من جديد عشان تلعب.",
+                ["TrialAlreadyUnlocked"] = "القفل مفكوك أصلاً",
+                ["TrialAlreadyUnlockedMessage"] = "النسخة التجريبية مفكوكة أصلاً على هالجهاز.",
+                ["TrialUnlockFailedMessage"] = "ما قدرنا نفك قفل النسخة التجريبية. جرب تشغيل اللانشر كـ مدير (administrator).",
             }
         };
         
