@@ -151,18 +151,6 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="..\bfix\dlllist.txt">
-      <Link>bfix\dlllist.txt</Link>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\bfix\OnlineFix.ini">
-      <Link>bfix\OnlineFix.ini</Link>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\bfix\OnlineFix64.dll">
-      <Link>bfix\OnlineFix64.dll</Link>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\bfix\winmm.dll">
-      <Link>bfix\winmm.dll</Link>
-    </EmbeddedResource>
     <None Include="app.manifest">
       <SubType>Designer</SubType>
     </None>

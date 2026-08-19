@@ -2480,14 +2480,15 @@ namespace MCLauncher
             }
         );
 
-        private void InvokeUnlock(WPFDataTypes.Version v)
+        private bool _isUnlocking = false;
+
+        private async void InvokeUnlock(WPFDataTypes.Version v)
         {
-            if (v == null || !v.IsInstalled)
+            if (v == null || !v.IsInstalled || _isUnlocking)
                 return;
-            
+
             string gameDir = Path.GetFullPath(v.GameDirectory);
-            
-            // Check if already unlocked
+
             if (BfixInjector.IsAlreadyUnlocked(gameDir))
             {
                 ShowFriendlyInfo(
@@ -2495,30 +2496,34 @@ namespace MCLauncher
                     Localization.Format("AlreadyUnlockedMessage", v.DisplayName));
                 return;
             }
-            
-            // Show confirmation dialog
+
             var result = MessageBox.Show(
                 Localization.Get("UnlockConfirmMessage"),
                 Localization.Get("UnlockConfirmTitle"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
-            
-            if (result == MessageBoxResult.Yes)
+
+            if (result != MessageBoxResult.Yes)
+                return;
+
+            _isUnlocking = true;
+            try
             {
-                try
-                {
-                    BfixInjector.InjectToMinecraft(gameDir);
-                    ShowFriendlySuccess(
-                        Localization.Get("UnlockSuccess"),
-                        Localization.Format("UnlockSuccessMessage", v.DisplayName));
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Unlock failed: {ex}");
-                    ShowFriendlyError(
-                        Localization.Get("Error"),
-                        $"Failed to unlock version:\n\n{ex.Message}");
-                }
+                await BfixInjector.InjectToMinecraftAsync(gameDir);
+                ShowFriendlySuccess(
+                    Localization.Get("UnlockSuccess"),
+                    Localization.Format("UnlockSuccessMessage", v.DisplayName));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Unlock failed: {ex}");
+                ShowFriendlyError(
+                    Localization.Get("UnlockDownloadFailedTitle"),
+                    Localization.Format("UnlockDownloadFailedMessage", ex.Message));
+            }
+            finally
+            {
+                _isUnlocking = false;
             }
         }
 
